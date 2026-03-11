@@ -6,10 +6,13 @@ Minimal integration example showing the CASA gate call contract.
 The gate accepts a Canonical Action Vector and returns a verdict with
 a complete CASA-T1 audit trace.
 
+Live gate for immediate evaluation (no setup required):
+  https://casa-gate.onrender.com/docs
+
 This is the public interface. The gate implementation is available
 under NDA and enterprise license.
 
-Contact: chrisherndonsr@gmail.com
+Contact: contact@resonanceinstitutellc.com
 © 2025-2026 Christopher T. Herndon / The Resonance Institute, LLC
 """
 
@@ -180,8 +183,14 @@ class CASAClient:
     """
     Client for the CASA Runtime gate API.
 
+    For immediate evaluation against the live public gate:
+        client = CASAClient(gate_url="https://casa-gate.onrender.com")
+
+    For enterprise deployment with API key:
+        client = CASAClient(gate_url="https://your-gate-host", api_key="your-key")
+
     Usage:
-        client = CASAClient(gate_url="http://localhost:8000", api_key="your-key")
+        client = CASAClient(gate_url="https://casa-gate.onrender.com")
 
         vector = CanonicalActionVector(
             actor_class=ActorClass.AGENT,
@@ -206,7 +215,10 @@ class CASAClient:
         proceed_with_execution()
     """
 
-    def __init__(self, gate_url: str, api_key: str, timeout: int = 5):
+    # Live public gate — no API key required for evaluation
+    PUBLIC_GATE_URL = "https://casa-gate.onrender.com"
+
+    def __init__(self, gate_url: str = PUBLIC_GATE_URL, api_key: str = None, timeout: int = 10):
         self.gate_url = gate_url.rstrip("/")
         self.api_key = api_key
         self.timeout = timeout
@@ -219,19 +231,22 @@ class CASAClient:
             GateUnavailable: If the gate cannot be reached (fail-closed — treat as REFUSE)
             GateError: If the gate returns an error (fail-closed — treat as REFUSE)
         """
+        # Map nine-field CAV to live gate schema
         payload = {
-            "request_id": str(uuid.uuid4()),
-            "canonical_vector": vector.to_dict(),
+            "action_class": vector.action_class.value,
+            "target_type": vector.target_class.value,
+            "content": "",
         }
+
+        headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
 
         try:
             response = requests.post(
-                f"{self.gate_url}/v1/evaluate",
+                f"{self.gate_url}/evaluate",
                 json=payload,
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json",
-                },
+                headers=headers,
                 timeout=self.timeout,
             )
             response.raise_for_status()
@@ -248,25 +263,23 @@ class CASAClient:
     def _parse_result(self, data: Dict[str, Any]) -> GateResult:
         constraints = [
             CASAConstraint(
-                type=c["type"],
-                target=c["target"],
-                requirement=c["requirement"],
-                source_primitive=c["source_primitive"],
+                type=c.get("type", ""),
+                target=c.get("target", ""),
+                requirement=c.get("requirement", ""),
+                source_primitive=c.get("source_primitive", ""),
             )
             for c in data.get("constraints", [])
         ]
-
-        resolution = data.get("resolution", {})
 
         return GateResult(
             verdict=Verdict(data["verdict"]),
             trace_id=data["trace_id"],
             trace_hash=data["trace_hash"],
             timestamp=data["timestamp"],
-            pos_mass=resolution.get("pos_mass", 0.0),
-            neg_mass=resolution.get("neg_mass", 0.0),
-            neg_ratio=resolution.get("neg_ratio", 0.0),
-            hard_stop_fired=resolution.get("hard_stop_fired", False),
+            pos_mass=data.get("propagation", {}).get("pos_mass", 0.0),
+            neg_mass=data.get("propagation", {}).get("neg_mass", 0.0),
+            neg_ratio=data.get("neg_ratio", 0.0),
+            hard_stop_fired=data.get("hard_stop", False),
             constraints=constraints,
             raw_trace=data,
         )
@@ -274,8 +287,7 @@ class CASAClient:
     def health(self) -> Dict[str, Any]:
         """Check gate health and version."""
         response = requests.get(
-            f"{self.gate_url}/v1/health",
-            headers={"Authorization": f"Bearer {self.api_key}"},
+            f"{self.gate_url}/health",
             timeout=self.timeout,
         )
         response.raise_for_status()
@@ -307,12 +319,13 @@ def example_agent_action_governance():
 
     The agent has proposed deleting a customer record.
     Before any downstream system is touched, we ask CASA.
+
+    Run this example against the live public gate:
+        python casa_client.py
     """
 
-    client = CASAClient(
-        gate_url="http://localhost:8000",
-        api_key="your-api-key",
-    )
+    # Connect to live public gate — no API key required
+    client = CASAClient(gate_url=CASAClient.PUBLIC_GATE_URL)
 
     # Agent proposed: delete_customer_record(customer_id=12345)
     # We derive the CAV from the request metadata — not from parsing the content.
@@ -345,10 +358,6 @@ def example_agent_action_governance():
             print(f"  [{c.source_primitive}] {c.type}: {c.requirement}")
 
     print("Execution permitted. Proceeding.")
-
-    # Expected verdict for this vector: GOVERN
-    # Material deletion of a principal record, even with authorization and consent,
-    # warrants audit trace and constraint emission.
 
 
 if __name__ == "__main__":
