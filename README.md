@@ -165,8 +165,10 @@ if result.verdict == Verdict.GOVERN:
 proceed()
 ```
 
-See [`sdk/python/casa_client.py`](sdk/python/casa_client.py) for the full typed interface.  
-See [`docs/integration.md`](docs/integration.md) for gateway, sidecar, and agent runtime patterns.
+See sdk/python/casa_client.py for the full typed interface.
+See docs/integration.md for gateway, sidecar, and agent runtime patterns.
+
+This repository exposes the public interface, integration patterns, and validation layer. Enterprise runtime materials are available separately under NDA.
 
 ---
 
