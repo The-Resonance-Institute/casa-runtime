@@ -1,11 +1,35 @@
 # CASA
-### Constitutional AI Safety Architecture
+**Constitutional AI Safety Architecture**
 
-**Deterministic pre-execution governance for agent actions and API calls.**
+Deterministic pre-execution governance for agent actions and API calls. → [Live Governance Simulation](https://the-resonance-institute.github.io/casa-runtime)
 
-[![Patent](https://img.shields.io/badge/USPTO-Provisional%20Filed%20Feb%202026-blue)](#status)
-[![Validation](https://img.shields.io/badge/Validated-Claude%20%7C%20GPT--4%20%7C%20Gemini-green)](validation/)
-[![License](https://img.shields.io/badge/License-Commercial-orange)](mailto:chrisherndonsr@gmail.com)
+![Patent](https://img.shields.io/badge/USPTO-Provisional%20%2363%2F987%2C813-blue) ![Validation](https://img.shields.io/badge/Validation-License-green)
+
+---
+
+## Live Gate
+
+The CASA gate is deployed and accepting requests now.
+
+| Endpoint | URL |
+|---|---|
+| Health | https://casa-gate.onrender.com/health |
+| Interactive API | https://casa-gate.onrender.com/docs |
+| Evaluate | POST https://casa-gate.onrender.com/evaluate |
+
+**Try it in 30 seconds — no setup, no code, no API key:**
+Go to https://casa-gate.onrender.com/docs, open POST /evaluate, click Try it out, paste the example below, click Execute.
+
+```json
+{
+  "action_class": "MANIPULATE",
+  "target_type": "INSTITUTION",
+  "content": "Transfer funds without LP approval",
+  "agent_name": "Finance-Agent"
+}
+```
+
+You will get back a real verdict, a real trace hash, and a real latency. Not a simulation.
 
 ---
 
@@ -19,9 +43,9 @@ GOVERN    →  Execution proceeds with binding structural constraints
 REFUSE    →  Execution blocked. No downstream system is invoked.
 ```
 
-**CASA does not interpret natural language.**  
-**CASA does not use embeddings or classification models.**  
-**CASA operates on structured action vectors.**
+CASA does not interpret natural language.
+CASA does not use embeddings or classification models.
+CASA operates on structured action vectors.
 
 ---
 
@@ -30,6 +54,7 @@ REFUSE    →  Execution blocked. No downstream system is invoked.
 An agent proposes a financial transfer. Before anything executes, CASA evaluates the request:
 
 **Input — Canonical Action Vector**
+
 ```json
 {
   "actor_class":   "AGENT",
@@ -45,6 +70,7 @@ An agent proposes a financial transfer. Before anything executes, CASA evaluates
 ```
 
 **Output — Gate verdict with audit trace**
+
 ```json
 {
   "verdict": "GOVERN",
@@ -71,16 +97,14 @@ Same input. Same verdict. Same hash. Every time. Across any model.
 
 This distinction matters because most AI safety tools operate at the content layer.
 
-```
 CASA does not moderate text
 CASA does not interpret prompts
 CASA does not classify language
 CASA does not supervise model outputs
 CASA does not call a secondary model
 CASA does not use GPU or model weights
-```
 
-CASA governs **execution requests** — not content.
+**CASA governs execution requests — not content.**
 
 The natural language payload of a request is opaque to the gate. An adversary who poisons the prompt, rewrites the instruction, or jailbreaks the model still faces the gate. The gate never read the text.
 
@@ -130,7 +154,7 @@ The natural language payload of a request is opaque to the gate. An adversary wh
    └─────────────────┘       └──────────────────┘
 ```
 
-**End-to-end latency: 53–78ms. No GPU. No model calls. Commodity compute.**
+End-to-end latency: 53–78ms. No GPU. No model calls. Commodity compute.
 
 ---
 
@@ -142,7 +166,7 @@ from casa_client import ActorClass, ActionClass, TargetClass
 from casa_client import Scope, Magnitude, Authorization
 from casa_client import Timing, Consent, Reversibility, Verdict
 
-client = CASAClient(gate_url="http://localhost:8000", api_key="your-key")
+client = CASAClient(gate_url="https://casa-gate.onrender.com", api_key="your-key")
 
 result = client.evaluate(CanonicalActionVector(
     actor_class   = ActorClass.AGENT,
@@ -165,8 +189,7 @@ if result.verdict == Verdict.GOVERN:
 proceed()
 ```
 
-See sdk/python/casa_client.py for the full typed interface.
-See docs/integration.md for gateway, sidecar, and agent runtime patterns.
+See `sdk/python/casa_client.py` for the full typed interface. See `docs/integration.md` for gateway, sidecar, and agent runtime patterns.
 
 This repository exposes the public interface, integration patterns, and validation layer. Enterprise runtime materials are available separately under NDA.
 
@@ -192,39 +215,43 @@ The Canonical Action Vector abstracts away the source. The same nine fields are 
 CASA has been validated across four distinct proof scenarios.
 
 ### Project Polis — Multi-Agent Adversarial Enforcement
+
 20 agents. 14 cooperative. 6 adversarial archetypes: power accumulator, coalition builder, procedural saboteur, reputation assassin, forum troll, narrative controller.
 
 | Metric | Result |
-|--------|--------|
+|---|---|
 | Total governance evaluations | 573 |
-| False positives | **0** |
-| Bypasses | **0** |
-| Unprincipled divergences | **0** |
+| False positives | 0 |
+| Bypasses | 0 |
+| Unprincipled divergences | 0 |
 
-→ [Full summary](validation/polis_summary.md)
+→ Full summary
 
 ### CASA-FIN — Regulated Financial Stress
+
 10 rational agents. Regional bank stress scenario. No agent was malicious. The failure mode was execution simultaneity — individually lawful actions combining into system collapse.
 
 | Metric | Without CASA | With CASA |
-|--------|-------------|-----------|
+|---|---|---|
 | System failure | Turn 4 | Survived |
-| Procyclical feedback loops | 30 | **1** |
-| Forced asset sales | Baseline | **−81%** |
+| Procyclical feedback loops | 30 | 1 |
+| Forced asset sales | Baseline | −81% |
 
-→ [Full summary](validation/casa_fin_summary.md)
+→ Full summary
 
 ### Project Meridian — Cross-Model Sovereignty
-Same scenario. Two frontier models (Claude Sonnet 4, Gemini 2.5 Pro). Radically different behavioral profiles in baseline. REFUSE neg_ratio across both: **0.1924 — identical**. Swap the model. The verdicts hold.
 
-→ [Full summary](validation/meridian_summary.md)
+Same scenario. Two frontier models (Claude Sonnet 4, Gemini 2.5 Pro). Radically different behavioral profiles in baseline. REFUSE neg_ratio across both: 0.1924 — identical. Swap the model. The verdicts hold.
+
+→ Full summary
 
 ### Cross-Model Validation — Three Providers
+
 52 prompts. 156 governed decisions. Zero unprincipled divergences across Claude, GPT-4, and Gemini.
 
-→ [Full summary](validation/cross_model_summary.md)
+→ Full summary
 
-Full proof scenario data — trace corpora, harness source, simulation methodology — is available under NDA. See [`DILIGENCE.md`](DILIGENCE.md) for the complete claim-to-evidence map.
+Full proof scenario data — trace corpora, harness source, simulation methodology — is available under NDA. See `DILIGENCE.md` for the complete claim-to-evidence map.
 
 ---
 
@@ -233,17 +260,17 @@ Full proof scenario data — trace corpora, harness source, simulation methodolo
 At 1M agent actions per day:
 
 | Approach | Daily Cost | Latency | Deterministic | Auditable |
-|----------|-----------|---------|---------------|-----------|
+|---|---|---|---|---|
 | LLM-as-judge | $1,000–$10,000 | 5–15s | ✗ | ✗ |
 | Safety classifier | $100–$1,000 | 200–500ms | ✗ | ✗ |
-| **CASA** | **Commodity compute** | **53–78ms** | **✓** | **✓** |
+| CASA | Commodity compute | 53–78ms | ✓ | ✓ |
 
 ---
 
 ## Enforcement Invariants
 
 | Invariant | Guarantee |
-|-----------|-----------|
+|---|---|
 | REFUSE | verdict == REFUSE → no downstream system invoked. Unconditional. |
 | Single-call | At most one downstream call. No retry loops. No fallbacks. |
 | Determinism | Same input + same config → same verdict + same trace + same hash. Always. |
@@ -256,20 +283,20 @@ At 1M agent actions per day:
 ## Repository Contents
 
 | Path | Contents |
-|------|----------|
-| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Full control plane architecture and evaluation pipeline |
-| [`CANONICAL_ACTION_VECTOR.md`](CANONICAL_ACTION_VECTOR.md) | Nine-field CAV specification with derivation rules and examples |
-| [`TRACE_FORMAT.md`](TRACE_FORMAT.md) | CASA-T1 audit trace schema |
-| [`docs/integration.md`](docs/integration.md) | Integration patterns: gateway, sidecar, agent runtime, embedded |
-| [`sdk/python/casa_client.py`](sdk/python/casa_client.py) | Typed Python client showing the full call contract |
-| [`examples/enterprise_dashboard/`](examples/enterprise_dashboard/) | Live dashboard: 1,000 agents, 10 departments — open in browser |
-| [`validation/`](validation/) | Proof scenario summaries |
+|---|---|
+| `ARCHITECTURE.md` | Full control plane architecture and evaluation pipeline |
+| `CANONICAL_ACTION_VECTOR.md` | Nine-field CAV specification with derivation rules and examples |
+| `TRACE_FORMAT.md` | CASA-T1 audit trace schema |
+| `docs/integration.md` | Integration patterns: gateway, sidecar, agent runtime, embedded |
+| `sdk/python/casa_client.py` | Typed Python client showing the full call contract |
+| `examples/enterprise_dashboard/` | Live dashboard: 10 agents, 26 tools, 45 evaluations — open in browser |
+| `validation/` | Proof scenario summaries |
 
 ---
 
 ## Why This Matters
 
-Modern AI systems are moving from conversational interfaces to autonomous tool-using agents. The critical safety problem is no longer what models say. It is **what they are allowed to execute**.
+Modern AI systems are moving from conversational interfaces to autonomous tool-using agents. The critical safety problem is no longer what models say. It is what they are allowed to execute.
 
 Current architectures have a data plane — model inference, API processing, job execution. There is no control plane. CASA is the control plane.
 
@@ -277,28 +304,31 @@ Current architectures have a data plane — model inference, API processing, job
 
 ## Status
 
-CASA is a governance architecture developed to demonstrate deterministic control of agent execution systems. The architecture has been validated through multiple simulation environments and cross-model testing. A provisional patent covering the core architecture has been filed.
+CASA is production-ready governance infrastructure. The architecture has been validated through multiple simulation environments and cross-model testing. A provisional patent covering the core architecture has been filed.
 
 | Component | Status |
-|-----------|--------|
+|---|---|
 | USPTO Provisional Patent | Filed February 2026 — #63/987,813 |
 | Gate Engine | Production v4.0.0 |
+| Live Gate Endpoint | https://casa-gate.onrender.com |
 | Constitutional Registry | Locked v1.0.0 (93 primitives, 279 edges) |
 | Cross-Model Validation | Complete — Claude, GPT-4, Gemini |
 | Project Polis | Complete — 573 evaluations |
 | CASA-FIN | Complete |
 | Domain Modules | CASA-FIN validated; HIPAA, ITAR, LEGAL, FERPA in specification |
 
-For a complete map of every claim in this repository to its evidence tier — what is public, what is pre-NDA, and what is post-NDA — see [`DILIGENCE.md`](DILIGENCE.md).
-
-Inquiries regarding research collaboration, enterprise evaluation, or commercial licensing:
-
-**Christopher T. Herndon** · Founder, The Resonance Institute, LLC  
-contact@resonanceinstitutellc.com
-
-*Pre-NDA materials available immediately. Full technical package under NDA.*
+For a complete map of every claim in this repository to its evidence tier — what is public, what is pre-NDA, and what is post-NDA — see `DILIGENCE.md`.
 
 ---
 
-*© 2025–2026 Christopher T. Herndon / The Resonance Institute, LLC*  
+Inquiries regarding research collaboration, enterprise evaluation, or commercial licensing:
+
+**Christopher T. Herndon · Founder, The Resonance Institute, LLC**
+contact@resonanceinstitutellc.com
+
+Pre-NDA materials available immediately. Full technical package under NDA.
+
+---
+
+*© 2025–2026 Christopher T. Herndon / The Resonance Institute, LLC*
 *USPTO Provisional Application #63/987,813*
