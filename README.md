@@ -292,7 +292,7 @@ For a complete map of every claim in this repository to its evidence tier — wh
 Inquiries regarding research collaboration, enterprise evaluation, or commercial licensing:
 
 **Christopher T. Herndon** · Founder, The Resonance Institute, LLC  
-chrisherndonsr@gmail.com · 949-745-1607
+contact@resonanceinstitutellc.com
 
 *Pre-NDA materials available immediately. Full technical package under NDA.*
 
