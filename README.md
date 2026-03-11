@@ -1,7 +1,9 @@
 # CASA
 **Constitutional AI Safety Architecture**
 
-Deterministic pre-execution governance for agent actions and API calls. → [Live Governance Simulation](https://the-resonance-institute.github.io/casa-runtime)
+Deterministic pre-execution governance for agent actions and API calls.
+
+→ [Live Governance Simulation](https://the-resonance-institute.github.io/casa-runtime) · [PE Fund Stress Scenario — Parallel Worlds Demo](https://the-resonance-institute.github.io/casa-runtime/examples/pe_fund_demo/) · [Quickstart](QUICKSTART.md)
 
 ![Patent](https://img.shields.io/badge/USPTO-Provisional%20%2363%2F987%2C813-blue) ![Validation](https://img.shields.io/badge/Validation-License-green)
 
@@ -290,6 +292,8 @@ At 1M agent actions per day:
 | `docs/integration.md` | Integration patterns: gateway, sidecar, agent runtime, embedded |
 | `sdk/python/casa_client.py` | Typed Python client showing the full call contract |
 | `examples/enterprise_dashboard/` | Live dashboard: 10 agents, 26 tools, 45 evaluations — open in browser |
+| `examples/pe_fund_demo/` | PE fund parallel worlds demo: 8 steps, real gate verdicts, live trace hashes |
+| `QUICKSTART.md` | Zero to governed in 5 minutes — curl, Python, drop-in wrapper |
 | `validation/` | Proof scenario summaries |
 
 ---
