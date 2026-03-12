@@ -247,6 +247,86 @@ print(f"Verdict breakdown: {stats['verdicts']}")
 
 ---
 
+## 7. Framework integrations — no CAV construction required
+
+If you are using LangChain, OpenAI function calling, or CrewAI, you do not need to construct action vectors manually. The Universal Intake Adapter (UIA) translates your native action format into a Canonical Action Vector automatically before the gate sees it.
+
+Install the UIA (available in the enterprise package — contact@resonanceinstitutellc.com):
+
+```
+pip install casa-uia
+```
+
+### LangChain
+
+```python
+from casa_uia import CasaAdapter
+
+adapter = CasaAdapter(gate_url="https://casa-gate.onrender.com")
+
+# Pass your AgentAction or tool call dict directly — no CAV construction needed
+result = adapter.evaluate(
+    framework="langchain",
+    action=agent_action,   # your existing LangChain AgentAction
+    domain="pe_fund"       # optional: activates domain-specific thresholds
+)
+
+if result.verdict == "REFUSE":
+    raise ExecutionBlocked(result.trace_id)
+```
+
+### OpenAI function calling
+
+```python
+from casa_uia import CasaAdapter
+
+adapter = CasaAdapter(gate_url="https://casa-gate.onrender.com")
+
+# Pass the tool_calls array from the Chat Completions response directly
+result = adapter.evaluate(
+    framework="openai",
+    action=response.choices[0].message.tool_calls[0],
+    domain="financial"
+)
+
+if result.verdict == "REFUSE":
+    raise ExecutionBlocked(result.trace_id)
+```
+
+### CrewAI
+
+```python
+from casa_uia import CasaAdapter
+
+adapter = CasaAdapter(gate_url="https://casa-gate.onrender.com")
+
+# Pass your Task dict directly — agent role and backstory are parsed automatically
+# for spending limits and authority grants. No manual field construction.
+result = adapter.evaluate(
+    framework="crewai",
+    action=task,           # your existing CrewAI Task dict
+    domain="pe_fund"
+)
+
+if result.verdict == "REFUSE":
+    raise ExecutionBlocked(result.trace_id)
+```
+
+**What the UIA does for you:**
+
+| Without UIA | With UIA |
+|---|---|
+| Manually construct 9-field CAV | Pass native framework action directly |
+| Write your own normalization logic | Three-layer CNL handles extraction, classification, authority resolution |
+| Infer spending limits and delegation depth | Authority Resolver reads them from agent role/backstory automatically |
+| One integration per framework | One adapter, any supported framework |
+
+The UIA produces a full 9-field Canonical Action Vector with per-field confidence scores. Low-confidence fields default to conservative values — the gate always sees the most restricted plausible interpretation of ambiguous inputs.
+
+UIA source and CNL specification are available under NDA. See the README for the full pipeline architecture.
+
+---
+
 ## Next steps
 
 - Interactive API explorer: https://casa-gate.onrender.com/docs
