@@ -158,6 +158,71 @@ The natural language payload of a request is opaque to the gate. An adversary wh
 
 End-to-end latency: 53–78ms. No GPU. No model calls. Commodity compute.
 
+
+## Universal Intake Adapter
+
+The CASA gate evaluates Canonical Action Vectors. The Universal Intake Adapter (UIA) is the translation layer that converts any agent framework's native action format into a CAV before the gate sees it.
+
+Without the UIA, each integration team writes their own normalization logic. With the UIA, any agent framework connects to CASA governance in a single function call.
+
+```
+LangChain AgentAction  ──┐
+OpenAI tool_calls      ──┤  UIA  →  CAV  →  CASA Gate  →  REFUSE / GOVERN / ACCEPT
+CrewAI Task            ──┘
+AutoGen (coming)       ──
+```
+
+**The Constitutional Normalization Layer (CNL)** is the three-stage pipeline inside the UIA:
+
+| Layer | Function | What It Does |
+|---|---|---|
+| Layer 1 — Structural Extractor | Field extraction | Pulls action class, magnitude, scope from raw args. No inference. |
+| Layer 2 — Semantic Classifier | Registry lookup | Maps tool names and resource patterns to CAV fields via configurable registries. |
+| Layer 3 — Authority Resolver | Authorization resolution | Evaluates spending limits, delegation chain depth, workflow state, role grants. |
+
+Each layer produces per-field confidence scores. Low confidence fields default to conservative values — the gate sees the most restricted plausible interpretation of ambiguous inputs.
+
+**Shims currently available:**
+
+| Framework | Format Handled |
+|---|---|
+| OpenAI | `tool_calls` array from Chat Completions API |
+| LangChain | `AgentAction`, tool call dict |
+| CrewAI | `Task` dict with agent role/backstory, `AgentAction` dict |
+
+**Wire transfer demo — end to end:**
+
+A LangChain agent proposes a $15,000,000 wire transfer. The agent's role carries a $500,000 spending limit. No approval token is present.
+
+```
+source_framework:  langchain
+raw_tool_name:     transfer_funds
+raw_amount:        $15,000,000
+raw_caller_role:   capital_allocator
+
+CNL output:
+  actor_class    : AGENT
+  action_class   : TRANSFER
+  target_class   : GROUP
+  scope          : UNBOUNDED
+  magnitude      : CRITICAL      ← $15M > $5M PE critical threshold
+  authorization  : EXCEEDS_GRANT ← $15M > $500K spending limit
+  timing         : ROUTINE
+  consent        : NONE          ← no approval token
+  reversibility  : IRREVERSIBLE  ← wire settles externally
+
+Gate verdict:    REFUSE
+Trace ID:        1a6965e9-0f75-401e-930a-e504da1f11f5
+Hard stop:       True
+Wire transfer:   BLOCKED
+Downstream:      NOT INVOKED
+```
+
+No LLM in the governance path. No GPU. No model calls. The wire never executes.
+
+The UIA source is available in the enterprise package under NDA. The CNL specification is available pre-NDA.
+
+
 ---
 
 ## Quick Integration
@@ -293,7 +358,7 @@ At 1M agent actions per day:
 | `sdk/python/casa_client.py` | Typed Python client showing the full call contract |
 | `examples/enterprise_dashboard/` | Live dashboard: 10 agents, 26 tools, 45 evaluations — open in browser |
 | `examples/pe_fund_demo/` | PE fund parallel worlds demo: 8 steps, real gate verdicts, live trace hashes |
-| `QUICKSTART.md` | Zero to governed in 5 minutes — curl, Python, drop-in wrapper |
+| `QUICKSTART.md` | Zero to governed in 5 minutes — curl, Python, LangChain, CrewAI |
 | `validation/` | Proof scenario summaries |
 
 ---
@@ -356,6 +421,9 @@ CASA is production-ready governance infrastructure. The architecture has been va
 |---|---|
 | USPTO Provisional Patent | Filed February 2026 — #63/987,813 |
 | Gate Engine | Production v4.0.0 |
+| Universal Intake Adapter | v1.0.0 — OpenAI, LangChain, CrewAI shims |
+| CNL Pipeline | Three-layer — Extractor, Classifier, Authority Resolver |
+| Test Coverage | 54 tests passing — unit, integration, red team |
 | Live Gate Endpoint | https://casa-gate.onrender.com |
 | Constitutional Registry | Locked v1.0.0 (93 primitives, 279 edges) |
 | Cross-Model Validation | Complete — Claude, GPT-4, Gemini |
