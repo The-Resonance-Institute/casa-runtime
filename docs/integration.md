@@ -12,6 +12,52 @@ The integration requires no changes to the model, the tools, or the orchestratio
 
 ---
 
+## Pattern 0: Supported Frameworks — No CAV Construction Required
+
+If you are using LangChain, OpenAI function calling, or CrewAI, skip Patterns 1–3.
+
+The Universal Intake Adapter (UIA) handles CAV derivation automatically. Pass your native action format directly — the three-layer Constitutional Normalization Layer extracts fields, classifies action and target types via registry lookup, and resolves authority from agent role and spending limits without any manual configuration.
+
+```python
+from casa_uia import CasaAdapter
+
+adapter = CasaAdapter(gate_url="https://casa-gate.onrender.com")
+
+# LangChain
+result = adapter.evaluate(
+    framework="langchain",
+    action=agent_action,    # AgentAction or tool call dict — pass as-is
+    domain="pe_fund"        # optional: activates domain-specific thresholds
+)
+
+# OpenAI function calling
+result = adapter.evaluate(
+    framework="openai",
+    action=response.choices[0].message.tool_calls[0],  # tool_calls array item
+    domain="financial"
+)
+
+# CrewAI
+result = adapter.evaluate(
+    framework="crewai",
+    action=task,            # Task dict — backstory parsed for spending limits automatically
+    domain="pe_fund"
+)
+
+# All three return the same verdict interface
+if result.verdict == "REFUSE":
+    raise ExecutionBlocked(result.trace_id)
+
+if result.verdict == "GOVERN":
+    apply_constraints(result.constraints)
+```
+
+The UIA produces a full 9-field CAV with per-field confidence scores. Low-confidence fields default to conservative values — the gate always sees the most restricted plausible interpretation of ambiguous inputs.
+
+**UIA is available in the enterprise package.** Contact: chrisherndonsr@gmail.com
+
+---
+
 ## Pattern 1: Agent Runtime (Most Common)
 
 Your orchestration framework separates action proposal from action execution. Insert CASA between the two.
