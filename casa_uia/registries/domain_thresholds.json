@@ -1,0 +1,100 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "description": "Domain threshold configuration for magnitude and scope classification.",
+    "notes": [
+      "Each domain defines MATERIAL and CRITICAL thresholds for numeric values.",
+      "The 'default' domain is used when no domain is specified.",
+      "Enterprise deployments override thresholds at deployment time.",
+      "record_count_* thresholds define scope magnitude for bulk operations."
+    ]
+  },
+
+  "domains": {
+    "default": {
+      "magnitude": {
+        "material_threshold": 1000,
+        "critical_threshold": 100000,
+        "currency": "USD"
+      },
+      "record_count": {
+        "bounded_threshold": 1000,
+        "unbounded_keyword_signals": ["all", "every", "entire", "*", "bulk", "batch", "mass"]
+      }
+    },
+
+    "financial": {
+      "magnitude": {
+        "material_threshold": 10000,
+        "critical_threshold": 1000000,
+        "currency": "USD",
+        "notes": "Wire transfers and fund disbursements: $10K material, $1M critical"
+      },
+      "record_count": {
+        "bounded_threshold": 500,
+        "unbounded_keyword_signals": ["all", "every", "entire", "*", "bulk", "portfolio", "fund-wide"]
+      }
+    },
+
+    "pe_fund": {
+      "magnitude": {
+        "material_threshold": 100000,
+        "critical_threshold": 5000000,
+        "currency": "USD",
+        "notes": "PE fund context: $100K material, $5M critical, $15M well above critical"
+      },
+      "record_count": {
+        "bounded_threshold": 50,
+        "unbounded_keyword_signals": ["all", "every", "entire", "*", "all_lps", "full_portfolio"]
+      }
+    },
+
+    "healthcare": {
+      "magnitude": {
+        "material_threshold": 1,
+        "critical_threshold": 100,
+        "unit": "PHI_RECORDS",
+        "notes": "Any PHI access is at minimum material. 100+ records is critical."
+      },
+      "record_count": {
+        "bounded_threshold": 10,
+        "unbounded_keyword_signals": ["all", "every", "entire", "*", "all_patients", "bulk"]
+      }
+    },
+
+    "infrastructure": {
+      "magnitude": {
+        "material_threshold": 5,
+        "critical_threshold": 50,
+        "unit": "INSTANCES",
+        "notes": "5+ instances is material. 50+ is critical."
+      },
+      "record_count": {
+        "bounded_threshold": 10,
+        "unbounded_keyword_signals": ["all", "every", "*", "cluster-wide", "fleet"]
+      }
+    }
+  },
+
+  "reversibility_signals": {
+    "IRREVERSIBLE": [
+      "wire_transfer", "settled", "sent", "disbursed", "hard_delete",
+      "permanent", "irrevocable", "destroy", "wipe", "drop_table",
+      "truncate", "external_payment", "published", "broadcast"
+    ],
+    "COSTLY": [
+      "delete", "remove", "archive", "purge", "revoke", "terminate",
+      "soft_delete", "deactivate", "close_account"
+    ],
+    "REVERSIBLE": [
+      "update", "modify", "patch", "edit", "create", "insert",
+      "query", "read", "get", "fetch", "search", "list"
+    ]
+  },
+
+  "timing_signals": {
+    "IMMEDIATE": ["urgent", "immediate", "now", "asap", "real_time", "sync", "critical"],
+    "EXPEDITED": ["priority", "expedited", "fast", "elevated", "sla_breach"],
+    "ROUTINE": []
+  }
+}
