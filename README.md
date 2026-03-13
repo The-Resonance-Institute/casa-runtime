@@ -37,46 +37,91 @@ You will get back a real verdict, a real trace hash, and a real latency. Not a s
 
 ## Put Your Agent Under CASA Governance — Right Now
 
-If you have a LangChain, OpenAI function calling, or CrewAI agent running today, you can put every action it proposes under deterministic governance in three steps. No schema construction. No configuration. Pass your native action format directly.
+If you have a LangChain, OpenAI function calling, or CrewAI agent running today, you can put every action it proposes under deterministic governance in four steps. No schema construction. No field mapping. No API key. The Universal Intake Adapter is included in this repo — clone it and you have everything you need.
 
-**Step 1 — Get access to the Universal Intake Adapter**
+---
 
-The UIA is available in the enterprise package. Contact contact@resonanceinstitutellc.com — pre-NDA, available immediately.
+**Step 1 — Clone this repo and install dependencies**
 
-**Step 2 — Install and wrap your agent**
+```bash
+git clone https://github.com/The-Resonance-Institute/casa-runtime.git
+cd casa-runtime
+pip install requests
+```
+
+The `casa_uia` package is in this repo. No separate install required.
+
+---
+
+**Step 2 — Import the adapter and point it at the live gate**
 
 ```python
 from casa_uia import CasaAdapter
 
+# The live gate is open. No API key required.
 adapter = CasaAdapter(gate_url="https://casa-gate.onrender.com")
 ```
 
-**Step 3 — Pass your existing action format directly**
+---
+
+**Step 3 — Pass your existing agent action directly**
+
+No changes to your agent. No schema to construct. Pass your native action format exactly as your framework produces it.
 
 ```python
-# LangChain — pass your AgentAction as-is
-result = adapter.evaluate(framework="langchain", action=agent_action, domain="pe_fund")
+# ── LangChain ──────────────────────────────────────────────────────────────
+# Pass your AgentAction or tool call dict exactly as LangChain produces it
+result = adapter.evaluate(
+    framework="langchain",
+    action=agent_action,        # your existing LangChain AgentAction — no changes
+    domain="pe_fund"            # optional: activates domain-specific thresholds
+)
 
-# OpenAI function calling — pass the tool_calls item directly
-result = adapter.evaluate(framework="openai", action=response.choices[0].message.tool_calls[0])
+# ── OpenAI function calling ─────────────────────────────────────────────────
+# Pass the tool_calls item directly from the Chat Completions API response
+result = adapter.evaluate(
+    framework="openai",
+    action=response.choices[0].message.tool_calls[0],  # pass as-is, no mapping needed
+    domain="financial"          # optional
+)
 
-# CrewAI — pass your Task dict directly
-# Agent role and backstory are parsed automatically for spending limits and authority
-result = adapter.evaluate(framework="crewai", action=task, domain="pe_fund")
-
-# Every framework returns the same verdict interface
-if result.verdict == "REFUSE":
-    raise ExecutionBlocked(result.trace_id)   # action blocked, trace recorded
-
-if result.verdict == "GOVERN":
-    apply_constraints(result.constraints)      # proceed with binding constraints
-
-# ACCEPT — proceed normally
+# ── CrewAI ──────────────────────────────────────────────────────────────────
+# Pass your Task dict directly
+# Agent role and backstory are parsed automatically for spending limits and authority grants
+result = adapter.evaluate(
+    framework="crewai",
+    action=task,                # your existing CrewAI Task dict — no changes
+    domain="pe_fund"            # optional
+)
 ```
 
-Every action your agent proposes now gets a deterministic ACCEPT / GOVERN / REFUSE verdict and a tamper-evident SHA-256 trace hash before anything executes. No model calls in the governance path. No GPU. 53–78ms end-to-end.
+---
 
-→ Full integration guide: [QUICKSTART.md](QUICKSTART.md) · [docs/integration.md](docs/integration.md)
+**Step 4 — Act on the verdict before execution**
+
+```python
+if result.verdict == "REFUSE":
+    # Action is blocked. No downstream system was called. Trace recorded.
+    print(f"Blocked — trace ID: {result.trace_id}")
+    raise ExecutionBlocked(result.trace_id)
+
+elif result.verdict == "GOVERN":
+    # Action proceeds with binding structural constraints
+    print(f"Governed — constraints: {result.constraints}")
+    apply_constraints(result.constraints)
+    proceed()
+
+else:  # ACCEPT
+    # Action cleared. Proceed normally. Trace recorded.
+    print(f"Accepted — trace hash: {result.trace_hash}")
+    proceed()
+```
+
+---
+
+That's it. Every action your agent proposes now gets a deterministic **ACCEPT / GOVERN / REFUSE** verdict and a tamper-evident SHA-256 trace hash **before anything executes**. No model calls in the governance path. No GPU. 53–78ms end-to-end.
+
+→ See [QUICKSTART.md](QUICKSTART.md) for curl and Python examples · [docs/integration.md](docs/integration.md) for gateway, sidecar, and embedded patterns
 
 ---
 
